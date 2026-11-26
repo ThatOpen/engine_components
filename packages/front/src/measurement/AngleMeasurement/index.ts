@@ -8,11 +8,7 @@ import { Mark } from "../../core";
 import { Measurement } from "../Measurement";
 import { MeasureLine } from "./src/types";
 import { newDimensionMark, newEndPoint } from "../utils";
-import {
-  AngleMeasurerModes,
-  AngleMeasurerTempData,
-  AngleVisual,
-} from "./src";
+import { AngleMeasurerModes, AngleMeasurerTempData, AngleVisual } from "./src";
 
 const ARC_SEGMENTS = 32;
 const ARC_RADIUS_FACTOR = 0.3;
@@ -155,6 +151,7 @@ export class AngleMeasurement extends Measurement<Angle, "angle"> {
     } else if (this._temp.clickCount === 2) {
       // Third click: set end and finalize
       this._temp.angle.end.copy(point);
+      this._temp.clickCount = 3;
       this.endCreation();
     }
   };
@@ -162,7 +159,10 @@ export class AngleMeasurement extends Measurement<Angle, "angle"> {
   /** {@link OBC.Createable.endCreation}. Finalizes the current angle after the third point is set. */
   endCreation = () => {
     if (!this.enabled) return;
-    if (this._temp.clickCount !== 2) return;
+    // Only commit once the third point has been set: an external
+    // Enter press after just two points would otherwise finalize an
+    // angle whose end is still the origin.
+    if (this._temp.clickCount !== 3) return;
 
     this.disposeAllPreview();
     this.list.add(this._temp.angle.clone());
@@ -526,6 +526,8 @@ export class AngleMeasurement extends Measurement<Angle, "angle"> {
     normal.normalize();
 
     const midDir = normalizedA.clone().applyAxisAngle(normal, angle / 2);
-    return vertex.clone().add(midDir.multiplyScalar(radius * LABEL_OFFSET_FACTOR));
+    return vertex
+      .clone()
+      .add(midDir.multiplyScalar(radius * LABEL_OFFSET_FACTOR));
   }
 }

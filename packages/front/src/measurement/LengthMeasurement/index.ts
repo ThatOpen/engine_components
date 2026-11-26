@@ -28,7 +28,6 @@ export class LengthMeasurement extends Measurement<Line, "length"> {
   private _edgeMissStreak = 0;
   private static readonly EDGE_MISS_TOLERANCE = 3;
 
-
   /**
    * The possible modes in which a measurement of this type may be created.
    */
@@ -104,12 +103,15 @@ export class LengthMeasurement extends Measurement<Line, "length"> {
       throw new Error("Measurement: world is need!");
     }
 
-    // Prefer the latest per-frame pick (matches what the snap marker
-    // is showing), fall back to a fresh pick when the user clicks
-    // before any pointer-move has fired in this session.
-    const pickResult =
-      this.lastPick ??
-      (await this._vertexPicker.get({ snappingClasses: this.snappings }));
+    // Always pick fresh at click time. `lastPick` is the last RAF pick
+    // driven by pointermove, which goes stale whenever the camera
+    // moves without the cursor moving (wheel zoom suspends picks for
+    // `cameraStopDelay` ms); reusing it would anchor the measurement
+    // to where the cursor *was*, not to the surface under the
+    // double-click.
+    const pickResult = await this._vertexPicker.get({
+      snappingClasses: this.snappings,
+    });
 
     // Disabled or disposed while the pick was pending.
     if (!this.enabled) return;
@@ -216,6 +218,17 @@ export class LengthMeasurement extends Measurement<Line, "length"> {
       await this.initPreview();
       return;
     }
+    // Refresh from a click-time pick before committing: the preview
+    // follows `lastPick` (pointermove-driven), which can lag or be
+    // stale right after camera interaction, so committing the preview
+    // as-is would anchor the endpoint away from where the user
+    // actually double-clicked. `updatePreviewLine` consumes the fresh
+    // `lastPick` in both modes (free copies the point into the line,
+    // edge re-snaps the edge) and the edge commit guard reads it too.
+    this.lastPick = await this._vertexPicker.get({
+      snappingClasses: this.snappings,
+    });
+    this.updatePreviewLine();
     this.endCreation();
   };
 
